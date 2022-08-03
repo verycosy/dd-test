@@ -12,17 +12,13 @@ export function createLogTransports(): winston.transport[] {
   const isProduction = process.env.NODE_ENV === 'production';
   if (isProduction) {
     return [
-      new transports.File({
-        filename: './logs/info.log',
-        level: 'info',
-        format: combine(infoFilter(), defaultFormat),
-      }),
-      new transports.File({
-        filename: './logs/error.log',
-        level: 'error',
-        format: defaultFormat,
-      }),
-      createDailyRotateFileTransport(),
+      createDailyRotateFileTransport(
+        'info',
+        'info',
+        combine(infoFilter(), defaultFormat),
+      ),
+      createDailyRotateFileTransport('error', 'error', defaultFormat),
+      createDailyRotateFileTransport('combined', 'info', defaultFormat),
     ];
   }
 
@@ -39,13 +35,18 @@ export function createLogTransports(): winston.transport[] {
   ];
 }
 
-function createDailyRotateFileTransport() {
+function createDailyRotateFileTransport(
+  filename: string,
+  level: string,
+  format: winston.Logform.Format,
+) {
   const dailyRotateFile = new transports.DailyRotateFile({
-    filename: './logs/combined-%DATE%.log',
+    filename: `./logs/${filename}-%DATE%.log`,
     datePattern: 'YYYY-MM-DD',
     maxSize: '20m',
     maxFiles: '14d',
-    format: defaultFormat,
+    level,
+    format,
     zippedArchive: true,
   });
 
